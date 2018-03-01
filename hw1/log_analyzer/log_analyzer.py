@@ -76,7 +76,46 @@ def choose_log_file(log_dir, ts_file):
 
 
 def parse_log(log_file, log_dir):
-    pass
+
+    def parse_line(line):
+        parsed = {}
+'''
+$remote_addr $remote_user $http_x_real_ip [$time_local] 
+"$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" $request_time
+'''     
+        p1 = re.compile(r'\[(.*)\]')
+        l1 = p.split(line)
+        l2 = l1[2]
+        '''
+        >>> p = re.compile(r'\[(.*)\]')
+        >>> b = p.split(a)
+        >>> len(b)
+        3
+        >>> b[0]
+        '$remote_addr $remote_user $http_x_real_ip '
+        >>> b[1]
+        '$time_local'
+        >>> b[2]
+        ' "$re  quest" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$  h  ttp_X_REQUEST_ID" "$http_X_RB_USER" $request_time'
+        >>> 
+        '''
+
+
+        parsed["$remote_addr"] = l1[0].split(' ')[0]
+        parsed["$remote_user"] = l1[0].split(' ')[1]
+        parsed["$http_x_real_ip"] = l1[0].split(' ')[2]
+        parsed["[$time_local]"] = l1[1]
+
+        # parsed["$request"] = params[4]
+        # parsed["$status"] = params[5]
+        # parsed["$body_bytes_sent"] = params[6]
+        # parsed["$http_referer"] = params[7]
+        # parsed["$http_user_agent"] = params[8]
+        # parsed["$http_x_forwarded_for"] = params[9]
+        # parsed["$http_X_REQUEST_ID"] = params[10]
+        # parsed["$http_X_RB_USER"] = params[11]
+        # parsed["$request_time"] = params[12]
+        # return parsed
 
 
 def main():
