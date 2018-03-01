@@ -18,7 +18,7 @@ config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
     "LOG_DIR": "./log",
-    "TS_FILE": ".tmp/log_analyzer.ts"
+    "TS_FILE": "./tmp/log_analyzer.ts"
 }
 
 
@@ -35,8 +35,6 @@ def merge_configs(config, config_file):
 
     for key in conf_from_file.keys():
         config[key] = conf_from_file[key]
-
-    print(config)
 
     return config
 
