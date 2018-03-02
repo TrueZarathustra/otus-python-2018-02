@@ -75,47 +75,84 @@ def choose_log_file(log_dir, ts_file):
         return log_file
 
 
-def parse_log(log_file, log_dir):
+def parse_log(log_file, log_dir, report_size):
 
     def parse_line(line):
-        parsed = {}
-'''
-$remote_addr $remote_user $http_x_real_ip [$time_local] 
-"$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" $request_time
-'''     
-        p1 = re.compile(r'\[(.*)\]')
-        l1 = p.split(line)
-        l2 = l1[2]
-        '''
-        >>> p = re.compile(r'\[(.*)\]')
-        >>> b = p.split(a)
-        >>> len(b)
-        3
-        >>> b[0]
-        '$remote_addr $remote_user $http_x_real_ip '
-        >>> b[1]
-        '$time_local'
-        >>> b[2]
-        ' "$re  quest" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$  h  ttp_X_REQUEST_ID" "$http_X_RB_USER" $request_time'
-        >>> 
-        '''
 
+        try:
+            tmp_line = line.split('] "')[1] # GET /api/v2/internal/banner/24288647/info HTTP/1.1" 200 351 "-" "-" "-" "1498697423-2539198130-4708-9752780" "89f7f1be37d" 0.072
+            request_time = float(tmp_line.split('" ')[-1])
+            request = tmp_line.split('" ')[0]
+            url = str(request.split(' ')[1])
 
-        parsed["$remote_addr"] = l1[0].split(' ')[0]
-        parsed["$remote_user"] = l1[0].split(' ')[1]
-        parsed["$http_x_real_ip"] = l1[0].split(' ')[2]
-        parsed["[$time_local]"] = l1[1]
+            return url, request_time
 
-        # parsed["$request"] = params[4]
-        # parsed["$status"] = params[5]
-        # parsed["$body_bytes_sent"] = params[6]
-        # parsed["$http_referer"] = params[7]
-        # parsed["$http_user_agent"] = params[8]
-        # parsed["$http_x_forwarded_for"] = params[9]
-        # parsed["$http_X_REQUEST_ID"] = params[10]
-        # parsed["$http_X_RB_USER"] = params[11]
-        # parsed["$request_time"] = params[12]
-        # return parsed
+        except:
+            return None, None
+
+    def calc_stats(numbers):
+        numbers.sort()
+        count = len(numbers)
+        time_sum = 0
+        for n in numbers:
+            time_sum += n
+        time_avg = time_sum*1.0/count
+        time_max = numbers[-1]
+        time_med = numbers[int(count/2)]
+
+        return count, time_sum, time_avg, time_max, time_med
+
+    try:
+        f = open(log_dir+'/'+log_file)
+    except:
+        print("Error opening log file")  # TODO: make logging instead all print statements
+        sys.exit(1)
+
+    ERROR_LEVEL = 0.1  # acceptable error level during log parsing
+    total_requests = 0
+    total_time = 0
+    lines_processed = 0
+    errors = 0
+    raw_data = {}
+
+    for line in f:
+        url, time = parse_line(line)
+        if url is None or time is None:
+            errors += 1
+            if lines_processed > 100 and errors*1.0/lines_processed > ERROR_LEVEL:
+                print("Too much errors, during parsing log file")
+                sys.exit(1)
+        else:
+            total_requests += 1
+            total_time += time
+            if url not in raw_data.keys():
+                raw_data[url] = []
+            raw_data[url].append(time)
+    f.close()
+
+    statistics = []
+    time_sums = []
+
+    for k in raw_data.keys():
+        d = {}
+        d['url'] = k
+        d['count'], d['time_sum'], d['time_avg'], d['time_max'], d['time_med'] = calc_stats(raw_data[k])
+        d['count_perc'] = d['count']/total_requests
+        d['time_perc'] = d['time_sum']/total_requests
+        time_sums.append(d['time_sum'])
+        statistics.append(d)
+    print(statistics[0:3])
+    if len(statistics) < report_size:
+        return statistics
+    else:
+        time_sums.sort(reverse=True)
+        timesum_border = time_sums[report_size]
+
+        result = []
+        for s in statistics:
+            if s['time_sum'] >= timesum_border:
+                result.append(s)
+        return result
 
 
 def main():
@@ -143,7 +180,7 @@ def main():
 
     log_file = choose_log_file(conf["LOG_DIR"], conf["TS_FILE"])
 
-    statistics = parse_log(log_file, conf["LOG_DIR"])
+    statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
 
 
 
