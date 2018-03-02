@@ -18,7 +18,8 @@ config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
     "LOG_DIR": "./log",
-    "TS_FILE": "./tmp/log_analyzer.ts"
+    "TS_FILE": "./tmp/log_analyzer.ts",
+    "REPORT_TEMPLATE": "./reports/report.html"
 }
 
 
@@ -66,13 +67,13 @@ def choose_log_file(log_dir, ts_file):
             ts = f.readline()
             ts_mtime = float(ts)
     except:
-        return log_file
+        return log_file, max_date.strftime("%Y%m%d")
 
     if ts_mtime > mtime:
         print("Nothing to parse: exiting")
         sys.exit(0)
     else:
-        return log_file
+        return log_file, max_date.strftime("%Y%m%d")
 
 
 def parse_log(log_file, log_dir, report_size):
@@ -141,7 +142,6 @@ def parse_log(log_file, log_dir, report_size):
         d['time_perc'] = d['time_sum']/total_requests
         time_sums.append(d['time_sum'])
         statistics.append(d)
-    print(statistics[0:3])
     if len(statistics) < report_size:
         return statistics
     else:
@@ -153,6 +153,37 @@ def parse_log(log_file, log_dir, report_size):
             if s['time_sum'] >= timesum_border:
                 result.append(s)
         return result
+
+
+def create_report(report_dir, template, date, statistics):
+
+    try:
+        with open(template) as f:
+            html = f.read()
+    except:
+        print("Error reading report template file")
+        sys.exit(1)
+
+    html = html.replace('$table_json', str(statistics))
+    outfile_path = report_dir + "/report-" + date + ".html"
+
+    try:
+        with open(outfile_path, "w") as f:
+            f.write(html)
+    except:
+        print("Error writing report file")
+        sys.exit(1)
+
+    return outfile_path
+
+
+def update_ts(ts_file, time):
+    try:
+        with open(ts_file, "w") as f:
+            f.write(str(time))
+    except:
+        print("Error writing timestamp to file")
+        sys.exit(1)
 
 
 def main():
@@ -178,11 +209,17 @@ def main():
 
     conf = merge_configs(config, args.config)
 
-    log_file = choose_log_file(conf["LOG_DIR"], conf["TS_FILE"])
+    log_file, date = choose_log_file(conf["LOG_DIR"], conf["TS_FILE"])
 
     statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
 
+    report_file = create_report(conf["REPORT_DIR"], conf["REPORT_TEMPLATE"], date, statistics)
 
+    mtime = os.path.getmtime(report_file)
+    update_ts(conf["TS_FILE"], mtime)
+
+    print("Report file: %s succcessfully created" % report_file)
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
