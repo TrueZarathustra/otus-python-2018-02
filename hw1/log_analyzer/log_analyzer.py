@@ -9,6 +9,7 @@
 
 import argparse
 from datetime import datetime
+import gzip
 import json
 import logging
 import os
@@ -55,7 +56,7 @@ def choose_log_file(log_dir, ts_file):
 
     if max_date == datetime.strptime("19010101", "%Y%m%d"):
         logging.info("Nothing to parse: exiting")
-        return 0
+        return None, None
 
     if LOG_SAMPLE + max_date.strftime("%Y%m%d") + ".gz" in os.listdir(log_dir):
         log_file = LOG_SAMPLE + max_date.strftime("%Y%m%d") + ".gz"
@@ -73,7 +74,7 @@ def choose_log_file(log_dir, ts_file):
 
     if ts_mtime > mtime:
         logging.info("Nothing to parse: exiting")
-        return 0
+        return None, None
     else:
         return log_file, max_date.strftime("%Y%m%d")
 
@@ -115,7 +116,11 @@ def parse_log(log_file, log_dir, report_size):
                round(time_med, 3)
 
     try:
-        f = open(log_dir+'/'+log_file)
+        log_path = log_dir+'/'+log_file
+        if log_path.endswith(".gz"):
+            f = gzip.open(log_path, 'rt')
+        else:
+            f = open(log_path)
     except:
         logging.error("Error opening log file")
         sys.exit(1)
@@ -132,7 +137,7 @@ def parse_log(log_file, log_dir, report_size):
         if url is None or time is None:
             errors += 1
             if lines_processed > 100 and \
-               errors*1.0/lines_processed > ERROR_LEVEL:  # UGLY formatting, Done jsut for PEP-8
+               errors*1.0/lines_processed > ERROR_LEVEL:  # UGLY, just for PEP8
                 logging.error("Too much errors, during parsing log file")
                 sys.exit(1)
         else:
@@ -238,7 +243,11 @@ def main():
 
     log_file, date = choose_log_file(conf["LOG_DIR"], conf["TS_FILE"])
 
+    if log_file is None:
+        return 0
+
     statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
+    print(statistics[0:10])
 
     report_file = create_report(conf["REPORT_DIR"],
                                 conf["REPORT_TEMPLATE"],

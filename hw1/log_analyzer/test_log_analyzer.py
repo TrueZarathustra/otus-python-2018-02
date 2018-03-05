@@ -56,7 +56,5 @@ class MergeConfigTests(unittest.TestCase):
             except Exception as e:
                 print(e)
 
-
-
 if __name__ == '__main__':
     unittest.main()
