@@ -247,7 +247,6 @@ def main():
         return 0
 
     statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
-    print(statistics[0:10])
 
     report_file = create_report(conf["REPORT_DIR"],
                                 conf["REPORT_TEMPLATE"],
