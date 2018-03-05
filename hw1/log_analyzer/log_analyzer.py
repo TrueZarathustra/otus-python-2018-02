@@ -55,7 +55,7 @@ def choose_log_file(log_dir, ts_file):
 
     if max_date == datetime.strptime("19010101", "%Y%m%d"):
         logging.info("Nothing to parse: exiting")
-        sys.exit(0)
+        return 0
 
     if LOG_SAMPLE + max_date.strftime("%Y%m%d") + ".gz" in os.listdir(log_dir):
         log_file = LOG_SAMPLE + max_date.strftime("%Y%m%d") + ".gz"
@@ -73,7 +73,7 @@ def choose_log_file(log_dir, ts_file):
 
     if ts_mtime > mtime:
         logging.info("Nothing to parse: exiting")
-        sys.exit(0)
+        return 0
     else:
         return log_file, max_date.strftime("%Y%m%d")
 
@@ -249,7 +249,7 @@ def main():
     update_ts(conf["TS_FILE"], mtime)
 
     logging.info("Report file: %s succcessfully created" % report_file)
-    sys.exit(0)
+    return 0
 
 if __name__ == "__main__":
 
