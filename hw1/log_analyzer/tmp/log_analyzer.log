@@ -1,0 +1,16 @@
+[2018.03.05 11:03:27] E Error reading report template file
+[2018.03.05 11:03:00] E Error reading report template file
+[2018.03.05 11:03:14] E Error reading report template file
+[2018.03.05 11:03:54] E Error reading config file
+[2018.03.05 11:03:15] E Error reading config file
+[2018.03.05 11:03:36] E Unexpected exception occured
+Traceback (most recent call last):
+  File "D:\Docs\Образование\otus_python\github\otus-python-2018-02\hw1\log_analyzer\log_analyzer.py", line 249, in <module>
+    main()
+  File "D:\Docs\Образование\otus_python\github\otus-python-2018-02\hw1\log_analyzer\log_analyzer.py", line 232, in main
+    statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
+  File "D:\Docs\Образование\otus_python\github\otus-python-2018-02\hw1\log_analyzer\log_analyzer.py", line 122, in parse_log
+    for line in f:
+  File "C:\Program Files (x86)\Python36-32\lib\encodings\cp1251.py", line 22, in decode
+    def decode(self, input, final=False):
+KeyboardInterrupt

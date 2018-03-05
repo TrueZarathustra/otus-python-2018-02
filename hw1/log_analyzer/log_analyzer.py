@@ -10,6 +10,7 @@
 import argparse
 from datetime import datetime
 import json
+import logging
 import os
 import re
 import sys
@@ -18,6 +19,7 @@ config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
     "LOG_DIR": "./log",
+    "SELF_LOG_FILE": "./tmp/log_analyzer.log",
     "TS_FILE": "./tmp/log_analyzer.ts",
     "REPORT_TEMPLATE": "./reports/report.html"
 }
@@ -29,9 +31,9 @@ def merge_configs(config, config_file):
         if os.stat(config_file).st_size == 0:
             return config
         with open(config_file) as f:
-            conf_from_file = json.load(f) # TODO: if file is empty continue to work
+            conf_from_file = json.load(f)
     except:
-        print("Error reading config file")  # TODO: make logging instead all print statements
+        logging.error("Error reading config file")
         sys.exit(1)
 
     for key in conf_from_file.keys():
@@ -52,7 +54,7 @@ def choose_log_file(log_dir, ts_file):
             max_date = date if date > max_date else max_date
 
     if max_date == datetime.strptime("19010101", "%Y%m%d"):
-        print("Nothing to parse: exiting")
+        logging.info("Nothing to parse: exiting")
         sys.exit(0)
 
     if LOG_SAMPLE + max_date.strftime("%Y%m%d") + ".gz" in os.listdir(log_dir):
@@ -70,7 +72,7 @@ def choose_log_file(log_dir, ts_file):
         return log_file, max_date.strftime("%Y%m%d")
 
     if ts_mtime > mtime:
-        print("Nothing to parse: exiting")
+        logging.info("Nothing to parse: exiting")
         sys.exit(0)
     else:
         return log_file, max_date.strftime("%Y%m%d")
@@ -81,7 +83,8 @@ def parse_log(log_file, log_dir, report_size):
     def parse_line(line):
 
         try:
-            tmp_line = line.split('] "')[1] # GET /api/v2/internal/banner/24288647/info HTTP/1.1" 200 351 "-" "-" "-" "1498697423-2539198130-4708-9752780" "89f7f1be37d" 0.072
+            tmp_line = line.split('] "')[1]
+            # tmp_line =  GET /api/v2/internal/banner/24288647/info HTTP/1.1" 200 351 "-" "-" "-" "1498697423-2539198130-4708-9752780" "89f7f1be37d" 0.072
             request_time = float(tmp_line.split('" ')[-1])
             request = tmp_line.split('" ')[0]
             url = str(request.split(' ')[1])
@@ -106,7 +109,7 @@ def parse_log(log_file, log_dir, report_size):
     try:
         f = open(log_dir+'/'+log_file)
     except:
-        print("Error opening log file")  # TODO: make logging instead all print statements
+        logging.error("Error opening log file")
         sys.exit(1)
 
     ERROR_LEVEL = 0.1  # acceptable error level during log parsing
@@ -121,7 +124,7 @@ def parse_log(log_file, log_dir, report_size):
         if url is None or time is None:
             errors += 1
             if lines_processed > 100 and errors*1.0/lines_processed > ERROR_LEVEL:
-                print("Too much errors, during parsing log file")
+                logging.error("Too much errors, during parsing log file")
                 sys.exit(1)
         else:
             total_requests += 1
@@ -161,7 +164,7 @@ def create_report(report_dir, template, date, statistics):
         with open(template) as f:
             html = f.read()
     except:
-        print("Error reading report template file")
+        logging.error("Error reading report template file")
         sys.exit(1)
 
     html = html.replace('$table_json', str(statistics))
@@ -171,7 +174,7 @@ def create_report(report_dir, template, date, statistics):
         with open(outfile_path, "w") as f:
             f.write(html)
     except:
-        print("Error writing report file")
+        logging.error("Error writing report file")
         sys.exit(1)
 
     return outfile_path
@@ -182,7 +185,7 @@ def update_ts(ts_file, time):
         with open(ts_file, "w") as f:
             f.write(str(time))
     except:
-        print("Error writing timestamp to file")
+        logging.error("Error writing timestamp to file")
         sys.exit(1)
 
 
@@ -199,6 +202,7 @@ def main():
     4. Generate html report
     5. Update/create ts-file
     '''
+
     parser = argparse.ArgumentParser(description='Log Analyzer')
     parser.add_argument('-c', '--config',
                         dest='config',
@@ -209,6 +213,20 @@ def main():
 
     conf = merge_configs(config, args.config)
 
+    if "SELF_LOG_FILE" not in conf.keys():
+        conf["SELF_LOG_FILE"] = None
+    else:
+        try:
+            f = open(conf["SELF_LOG_FILE"], 'r')
+            f.close()
+        except IOError:
+            f = open(conf["SELF_LOG_FILE"], 'w')
+            f.close()
+
+    logging.basicConfig(format='[%(asctime)s] %(levelname).1s %(message)s',
+                        datefmt='%Y.%m.%d %H:%m:%S',
+                        filename=conf["SELF_LOG_FILE"])
+
     log_file, date = choose_log_file(conf["LOG_DIR"], conf["TS_FILE"])
 
     statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
@@ -218,8 +236,17 @@ def main():
     mtime = os.path.getmtime(report_file)
     update_ts(conf["TS_FILE"], mtime)
 
-    print("Report file: %s succcessfully created" % report_file)
+    logging.info("Report file: %s succcessfully created" % report_file)
     sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+
+    logging.basicConfig(format='[%(asctime)s] %(levelname).1s %(message)s',
+                        datefmt='%Y.%m.%d %H:%m:%S',
+                        filename=config["SELF_LOG_FILE"])
+
+    try:
+        main()
+    except:
+        logging.exception("Unexpected exception occured")
+        sys.exit(1)
