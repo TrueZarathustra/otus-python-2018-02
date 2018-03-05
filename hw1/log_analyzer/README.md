@@ -1,19 +1,21 @@
 # Log Analyzer
 # (Otus-Python-2018-02 Homework)
 
-## Общее описание
+## Description
 
-Утилита для анализа логов веб-сервера Nginx, основной задачей которой является выявление наиболее долго загружающихся URL-ов. 
+Utility for analyzing Nginx log. Helps to find the most slow-loading URLs
 
-## Запуск утилиты
-Утилита запускается из командной строки и может принимать параметр --config, указывающий на местоположение конфигурационного файла, например:
+
+## Usage
+Run from a command line. --config is an option (point to a configuration file).  
+Example:
 ```
 log_anlyzer.py --config "/tmp/config.file"
 ```
 
-## Конфигурационный файл
+## Configuration file
 
-Конфигурационный файл должен содержать данные в формате json. Пример правильно оформленного конфигурационного файла
+File format is json. Example:
 ```
 {
     "REPORT_SIZE": 1000,
@@ -23,20 +25,30 @@ log_anlyzer.py --config "/tmp/config.file"
 }
 ```
 
-### Параметры конфигурационного файла
+### Configuration file details
 
-Конфигурационный файл может (но не обязан) содержать следующие параметры:
+Configuration file can contain following options:
 ```
-REPORT_SIZE - количество включаемых в отчёт записей (наиболее "медленных" url-ов)
-REPORT_DIR - директория в которую будет записан отчёт (ожидается имя логов в формате nginx-access-ui.log-YYYYMMDD, анализируется самый последний по YYYYMMDD) 
-LOG_DIR - директория в которой утилита будет искать файлы логов для последующего анализа
-SELF_LOG_FILE - путь до лог-файла создаваемого утилитой
-TS_FILE - путь до файла с временной меткой, указывающей на последний успешный запуск утилиты
-REPORT_TEMPLATE - путь до файла c HTML-шаблоном генерируемого отчёта
+REPORT_SIZE - Number of the most slow URLs in the report
+REPORT_DIR - output directory for the report 
+LOG_DIR - directory for the logs to be analyzed. Log filenames are expected  as "nginx-access-ui.log-YYYYMMDD"
+SELF_LOG_FILE - path to the log_analyzer's self log file
+TS_FILE - path to the timestamp file (last succesful run)
+REPORT_TEMPLATE - path to HTML-template of the report
 ```
 
-## Unit-тесты
-Unit-тесты запускаются при помощи команды:
+Default values:
+"REPORT_SIZE": 1000
+"REPORT_DIR": "./reports"
+"LOG_DIR": "./log"
+"SELF_LOG_FILE": "./tmp/log_analyzer.log"
+"TS_FILE": "./tmp/log_analyzer.ts"
+"REPORT_TEMPLATE": "./reports/report.html"
+```
+
+## Unit-test
+
+To run unit-test use:
 ```
 test_log_anlyzer.py
 ```
