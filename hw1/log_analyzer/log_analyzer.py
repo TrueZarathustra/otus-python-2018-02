@@ -101,7 +101,7 @@ def parse_log(log_file, log_dir, report_size):
         time_max = numbers[-1]
         time_med = numbers[int(count/2)]
 
-        return count, time_sum, time_avg, time_max, time_med
+        return count, round(time_sum, 3), round(time_avg, 3), round(time_max, 3), round(time_med, 3)
 
     try:
         f = open(log_dir+'/'+log_file)
@@ -138,8 +138,8 @@ def parse_log(log_file, log_dir, report_size):
         d = {}
         d['url'] = k
         d['count'], d['time_sum'], d['time_avg'], d['time_max'], d['time_med'] = calc_stats(raw_data[k])
-        d['count_perc'] = d['count']/total_requests
-        d['time_perc'] = d['time_sum']/total_requests
+        d['count_perc'] = round(d['count']*100/total_requests, 3)
+        d['time_perc'] = round(d['time_sum']*100/total_requests, 3)
         time_sums.append(d['time_sum'])
         statistics.append(d)
     if len(statistics) < report_size:
