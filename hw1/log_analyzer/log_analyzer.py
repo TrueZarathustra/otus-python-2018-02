@@ -84,7 +84,11 @@ def parse_log(log_file, log_dir, report_size):
 
         try:
             tmp_line = line.split('] "')[1]
-            # tmp_line =  GET /api/v2/internal/banner/24288647/info HTTP/1.1" 200 351 "-" "-" "-" "1498697423-2539198130-4708-9752780" "89f7f1be37d" 0.072
+            '''
+            # tmp_line =  GET /api/v2/internal/banner/24288647/info HTTP/1.1"
+             200 351 "-" "-" "-" "1498697423-2539198130-4708-9752780"
+             "89f7f1be37d" 0.072
+            '''
             request_time = float(tmp_line.split('" ')[-1])
             request = tmp_line.split('" ')[0]
             url = str(request.split(' ')[1])
@@ -104,7 +108,11 @@ def parse_log(log_file, log_dir, report_size):
         time_max = numbers[-1]
         time_med = numbers[int(count/2)]
 
-        return count, round(time_sum, 3), round(time_avg, 3), round(time_max, 3), round(time_med, 3)
+        return count, \
+               round(time_sum, 3), \
+               round(time_avg, 3), \
+               round(time_max, 3), \
+               round(time_med, 3)
 
     try:
         f = open(log_dir+'/'+log_file)
@@ -123,7 +131,8 @@ def parse_log(log_file, log_dir, report_size):
         url, time = parse_line(line)
         if url is None or time is None:
             errors += 1
-            if lines_processed > 100 and errors*1.0/lines_processed > ERROR_LEVEL:
+            if lines_processed > 100 and \
+               errors*1.0/lines_processed > ERROR_LEVEL:  # UGLY formatting, Done jsut for PEP-8
                 logging.error("Too much errors, during parsing log file")
                 sys.exit(1)
         else:
@@ -231,7 +240,10 @@ def main():
 
     statistics = parse_log(log_file, conf["LOG_DIR"], conf["REPORT_SIZE"])
 
-    report_file = create_report(conf["REPORT_DIR"], conf["REPORT_TEMPLATE"], date, statistics)
+    report_file = create_report(conf["REPORT_DIR"],
+                                conf["REPORT_TEMPLATE"],
+                                date,
+                                statistics)
 
     mtime = os.path.getmtime(report_file)
     update_ts(conf["TS_FILE"], mtime)
